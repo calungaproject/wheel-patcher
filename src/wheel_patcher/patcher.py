@@ -145,14 +145,19 @@ class WheelPatcher:
         if not self._files_to_add:
             raise WheelError("No files to add. Use add_file() first.")
 
-        temp_fd, temp_path_str = tempfile.mkstemp(suffix=".whl")
+        # Create temp file in the same directory as the output to avoid
+        # cross-device link errors when renaming. os.rename() (used by
+        # Path.replace()) cannot move files across filesystem boundaries.
+        temp_fd, temp_path_str = tempfile.mkstemp(
+            suffix=".whl", dir=output_path.parent
+        )
         temp_path = Path(temp_path_str)
 
         try:
             with zipfile.ZipFile(temp_path, "w", zipfile.ZIP_DEFLATED) as new_zip:
-                for item in self._zip_file.namelist():
-                    if item != self._record_path:
-                        data = self._zip_file.read(item)
+                for item in self._zip_file.infolist():
+                    if item.filename != self._record_path:
+                        data = self._zip_file.read(item.filename)
                         new_zip.writestr(item, data)
 
                 for dest, content in self._files_to_add.items():
