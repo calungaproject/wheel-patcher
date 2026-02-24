@@ -155,9 +155,9 @@ class WheelPatcher:
 
         try:
             with zipfile.ZipFile(temp_path, "w", zipfile.ZIP_DEFLATED) as new_zip:
-                for item in self._zip_file.namelist():
-                    if item != self._record_path:
-                        data = self._zip_file.read(item)
+                for item in self._zip_file.infolist():
+                    if item.filename != self._record_path:
+                        data = self._zip_file.read(item.filename)
                         new_zip.writestr(item, data)
 
                 for dest, content in self._files_to_add.items():
